@@ -323,3 +323,210 @@ pdfetch_BOE <- function(identifiers, from, to=Sys.Date()) {
   xts(fr[,-1], dates)
 }
 
+#' Fetch data from U.S. Bureau of Labor Statistics
+#' 
+#' @param identifiers a vector of BLS time series IDs
+#' @param from start year
+#' @param to end year. Note that the request will fail if this is a future year
+#'   that is beyond the last available data point in the series.
+#' @return a xts object
+#' @export
+#' @examples
+#' pdfetch_BLS(c("EIUIR","EIUIR100"), 2005, 2010)
+pdfetch_BLS <- function(identifiers, from, to) {
+  if (!is.numeric(from) || !is.numeric(to))
+    stop("Both from and to must be integers")
+  
+  if (to < from)
+    stop("to must be greater than or equal to from")
+  
+  years <- seq(from, to, by=10)
+  if (years[length(years)] != to || length(years) == 1)
+    years <- c(years, to)
+  
+  results <- list()
+  for (id in identifiers)
+    results[[id]] <- NA
+  
+  for (i in 2:length(years)) {
+    from <- years[i-1]+1
+    to <- years[i]
+    if (i == 2)
+      from <- years[i-1]
+    
+    req <- toJSON(list(seriesid=identifiers, startyear=unbox(from), endyear=unbox(to)))
+    headers <- list('Content-Type' = 'application/json; charset=utf-8')
+    resp <- fromJSON(postForm("http://api.bls.gov/publicAPI/v1/timeseries/data/",
+                              .opts=list(postfields=req, httpheader=headers)))
+    
+    if (resp$status != "REQUEST_SUCCEEDED")
+      stop("Request failed")
+    
+    series <- resp$Results$series
+    print(series$seriesID)
+    for (j in 1:length(identifiers)) {
+      seriesID <- series$seriesID[j]
+      if (length(series$data[[j]]) > 0)
+        results[[seriesID]] <- rbind(results[[seriesID]], series$data[[j]])
+    }
+  }
+  
+  ix <- sapply(results, function(x) inherits(x, "data.frame"))
+  
+  if (!all(ix))
+    warning(paste("No data found for series", identifiers[!ix], "in specified time range"))
+  
+  if (all(!ix))
+    return(NULL)
+  
+  results <- results[ix]
+  
+  for (id in names(results)) {
+    dat <- subset(results[[id]], period != 'M13')
+    freq <- substr(dat$period[1], 1, 1)
+    periods <- as.numeric(substr(dat$period, 2, 3))
+    years <- as.numeric(dat$year)
+    
+    if (freq == "M")
+      dates <- as.Date(ISOdate(years, periods, 1))
+    else if (freq == "Q")
+      dates <- as.Date(ISOdate(years, periods*3, 1))
+    else if (freq == "A")
+      dates <- as.Date(ISOdate(years, 12, 31))
+    else
+      stop(paste("Unrecognized frequency", freq))
+    
+    dates <- month_end(dates)
+    
+    results[[id]] <- xts(as.numeric(dat$value), dates)
+    colnames(results[[id]]) <- id
+  }
+  
+  identifiers <- identifiers[identifiers %in% names(results)]
+  na.trim(do.call(merge.xts, results), is.na="all")[, identifiers]
+}
+
+#' Fetch data from the French National Institute of Statistics and Economic Studies (INSEE)
+#' 
+#' @param identifiers a vector of INSEE series codes
+#' @return a xts object
+#' @export
+#' @examples
+#' x <- pdfetch_INSEE(c("000810635"))
+pdfetch_INSEE <- function(identifiers) {
+  results <- list()
+  
+  for (id in identifiers) {
+    url <- paste0("http://www.bdm.insee.fr/bdm2/affichageSeries.action?idbank=",id)
+    page <- tryCatch({
+      getURL(url, httpheader = c("Accept-Language"="en-US,en;q=0.8"))
+    }, warning = function(w) {
+      
+    })
+    
+    if (!is.null(page)) {
+      doc <- htmlParse(page)
+      dat <- readHTMLTable(doc)[[1]]
+      
+      if (names(dat)[2] == "Month") {
+        year <- as.numeric(as.character(dat[,1]))
+        month <- as.character(dat[,2])
+        dates <- as.Date(paste(year, month, 1), format="%Y %b %d")
+      } else if (names(dat[2]) == "Quarter") {
+        year <- as.numeric(as.character(dat[,1]))
+        month <- as.numeric(as.character(dat[,2]))*3
+        dates <- as.Date(ISOdate(year, month, 1))
+      } else if (ncol(dat) == 2) {
+        year <- as.numeric(as.character(dat[,1]))
+        dates <- as.Date(ISOdate(year, 12, 31))
+      } else {
+        stop("Unrecognized frequency")
+      }
+      
+      values <- as.numeric(gsub("[^0-9]", "", dat[,ncol(dat)]))
+      dates <- month_end(dates)
+      
+      x <- xts(values, dates)
+      colnames(x) <- id
+      results[[id]] <- x 
+    } else {
+      warning(paste("Series", id, "not found"))
+    }
+  }
+  
+  if (length(results) == 0)
+    return(NULL)
+  
+  na.trim(do.call(merge.xts, results), is.na="all")
+}
+
+#' Fetch data from theb UK Office of National Statistics
+#' @param identifiers a vector of ONS series codes
+#' @param dataset ONS dataset name
+#' @return a xts object
+#' @export
+#' @examples
+#' pdfetch_ONS(c("LF24","LF2G"), "lms")
+pdfetch_ONS <- function(identifiers, dataset) {
+  identifiers <- toupper(identifiers)
+  dataset <- tolower(dataset)
+  
+  results <- list()
+  
+  for (id in identifiers) {
+    url <- paste0("http://www.ons.gov.uk/ons/datasets-and-tables/downloads/csv.csv?dataset=",
+                  dataset,"&cdid=",id)
+    
+    tmp <- tempfile()
+    retval <- tryCatch({ 
+      download.file(url, destfile=tmp, quiet=T)
+    }, warning = function(w) {
+      warning(paste("Unable to download series",id,"from dataset",dataset))
+      unlink(tmp)
+      w
+    }, error = function(e) {
+      print(e)
+      unlink(tmp)
+      e
+    })
+    
+    if (inherits(retval, "warning") || inherits(retval, "error"))
+      next
+    
+    fr <- read.csv(tmp, header=T, stringsAsFactors=F)
+    fr <- fr[2:(which(fr[,1]=='\xa9 Crown Copyright')-1),]
+    fr[,2] <- as.numeric(fr[,2])
+    
+    unlink(tmp)
+    
+    datesA <- grep("^[0-9]{4}$", fr[,1])
+    datesQ <- grep("^[0-9]{4} Q[1-4]$", fr[,1])
+    datesM <- grep("^[0-9]{4} [A-Z]{3}$", fr[,1])
+    
+    dates <- NULL
+    if (length(datesM) > 0) {
+      dates <- as.Date(paste(fr[datesM,1],1), "%Y %b %d")
+      dateix <- datesM
+    } else if (length(datesQ) > 0) {
+      y <- as.numeric(substr(fr[datesQ,1], 1, 4))
+      m <- as.numeric(substr(fr[datesQ,1], 7, 7))*3
+      dates <- as.Date(ISOdate(y, m, 1))
+      dateix <- datesQ
+    } else if (length(datesA) > 0) {
+      dates <- as.Date(ISOdate(as.numeric(fr[datesA,1]), 12, 31))
+      dateix <- datesA
+    }
+    
+    if (!is.null(dates)) {
+      dates <- month_end(dates)
+      x <- xts(fr[dateix,2], dates)
+      colnames(x) <- id
+      results[[id]] <- x
+    }
+  }
+
+  if (length(results) == 0)
+    return(NULL)
+  
+  na.trim(do.call(merge.xts, results), is.na="all")
+}

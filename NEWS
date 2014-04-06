@@ -1,3 +1,8 @@
+Version 0.1.3
+--------------------------------------
+
+* Added support for US Bureau of Labor Statistics, UK ONS, and French INSEE
+
 Version 0.1.2
 --------------------------------------
 
@@ -6,7 +11,7 @@ Version 0.1.2
 Version 0.1.1
 --------------------------------------
 
-* Removed reliance on curl.exe
+* Removed reliance on curl.exe on Windows
 
 Version 0.1
 --------------------------------------

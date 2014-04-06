@@ -32,3 +32,23 @@ test_that("test World Bank", {
 test_that("test Bank of England", {
   x <- pdfetch_BOE(c("LPMVWYR", "LPMVWYR"), "2012-01-01")
 })
+
+test_that("test US Bureau of Labor Statistics", {
+  x <- pdfetch_BLS(c("EIUIR","EIUIR100"), 1990, 2014)
+  x <- pdfetch_BLS(c("LUU0203161800"), 2000, 2010)
+  x <- pdfetch_BLS(c("ENU0100110010"), 2000, 2014)
+  x <- pdfetch_BLS(c("BDS0000000000000000110001LQ5"), 2000, 2010)
+})
+
+test_that("test INSEE", {
+  x <- pdfetch_INSEE(c("000810635"))
+  x <- pdfetch_INSEE(c("001625866","001625866x","001616357"))
+  x <- pdfetch_INSEE(c("001625866x"))
+})
+
+test_that("test ONS", {
+  x <- pdfetch_ONS(c("K5CB1","K5CB"), "emp")
+  x <- pdfetch_ONS(c("K5CB1"), "emp")
+  x <- pdfetch_ONS(c("K5BZ","K54L"), "emp")
+  x <- pdfetch_ONS(c("LF24","LF2G"), "lms")
+})
