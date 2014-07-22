@@ -1,3 +1,8 @@
+Version 0.1.4
+--------------------------------------
+
+* Fixed a bug in the handling of Eurostat monthly dates (thanks to Chiara Carini)
+
 Version 0.1.3
 --------------------------------------
 

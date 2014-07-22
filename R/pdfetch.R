@@ -244,7 +244,7 @@ pdfetch_EUROSTAT <- function(flowRef, from, to, ...) {
       dates <- quarter_end(dates)
     } else if (freq == "M") {
       dates <- as.Date(as.yearmon(unlist(getNodeSet(series, ".//generic:ObsDimension/@value", "generic")), format="%Y-%m"))
-      day(dates) <- month_end(dates)
+      dates <- month_end(dates)
     } else if (freq == "D") {
       dates <- as.Date(unlist(getNodeSet(series, ".//generic:ObsDimension/@value", "generic")))
     } else {
