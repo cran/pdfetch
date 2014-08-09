@@ -121,7 +121,7 @@ pdfetch_ECB <- function(identifiers) {
     } else if (freq == "Q") {
       dates <- quarter_end(as.Date(as.yearqtr(fr[,1])))
     } else if (freq == "M") {
-      dates <- month_end(as.Date(as.yearmon(fr[,1])))
+      dates <- month_end(as.Date(as.yearmon(fr[,1], "%Y%b")))
     } else if (freq == "B" || freq == "D") {
       dates <- as.Date(fr[,1])
     } else {
