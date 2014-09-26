@@ -15,6 +15,9 @@ Fetch data from the French National Institute of Statistics
 and Economic Studies (INSEE)
 }
 \examples{
-x <- pdfetch_INSEE(c("000810635"))
+tryCatch(pdfetch_INSEE(c("000810635")),
+   error = function(e) {},
+   warning = function(w) {}
+)
 }
 

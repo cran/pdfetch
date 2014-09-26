@@ -1,3 +1,10 @@
+Version 0.1.6
+--------------------------------------
+
+* Added support for US Energy Information Administration API
+* Wrapped examples with tryCatch to stop temporary web service problems from being flagged on CRAN.
+* Switched from using RCurl directly to the httr package.
+
 Version 0.1.5
 --------------------------------------
 

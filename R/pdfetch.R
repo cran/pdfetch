@@ -7,8 +7,13 @@
 #' @return a xts object
 #' @export
 #' @examples
-#' pdfetch_YAHOO(c("^gspc","^ixic"))
-#' pdfetch_YAHOO(c("^gspc","^ixic"), "adjclose")
+#' tryCatch({
+#'    pdfetch_YAHOO(c("^gspc","^ixic"))
+#'    pdfetch_YAHOO(c("^gspc","^ixic"), "adjclose")
+#'    },
+#'    error = function(e) {},
+#'    warning = function(w) {}
+#' )
 pdfetch_YAHOO <- function(identifiers, 
                           fields=c("open","high","low","close","volume","adjclose"),
                           from=as.Date("2007-01-01"),
@@ -60,7 +65,10 @@ pdfetch_YAHOO <- function(identifiers,
 #' @return a xts object
 #' @export
 #' @examples
-#' pdfetch_FRED(c("GDPC1", "PCECC96"))
+#' tryCatch(pdfetch_FRED(c("GDPC1", "PCECC96")),
+#'          error = function(e) {},
+#'          warning = function(w) {}
+#' )
 pdfetch_FRED <- function(identifiers) {  
   results <- list()
   for (i in 1:length(identifiers)) {
@@ -100,11 +108,15 @@ pdfetch_FRED <- function(identifiers) {
 #' @return a xts object
 #' @export
 #' @examples
-#' pdfetch_ECB("FM.B.U2.EUR.4F.KR.DFR.CHG")
+#' tryCatch(pdfetch_ECB("FM.B.U2.EUR.4F.KR.DFR.CHG"),
+#'          error = function(e) {},
+#'          warning = function(w) {}
+#' )
 pdfetch_ECB <- function(identifiers) {
   results <- list()
   for (i in 1:length(identifiers)) {
-    tmp <- getURL(paste0("http://sdw.ecb.europa.eu/quickviewexport.do?SERIES_KEY=",identifiers[i],"&type=csv"))
+    req <- GET(paste0("http://sdw.ecb.europa.eu/quickviewexport.do?SERIES_KEY=",identifiers[i],"&type=csv"))
+    tmp <- content(req, as="text")
     fr <- read.csv(textConnection(tmp), header=F, stringsAsFactors=F)[-c(1:5),]
     
     if (inherits(fr, "character"))
@@ -140,7 +152,8 @@ pdfetch_ECB <- function(identifiers) {
 # Download Eurostat DSD file
 pdfetch_EUROSTAT_GETDSD <- function(flowRef) {
   url <- paste0("http://ec.europa.eu/eurostat/SDMX/diss-web/rest/datastructure/ESTAT/DSD_", flowRef)
-  doc <- xmlInternalTreeParse(getURL(url, useragent="RCurl"))
+  req <- GET(url, add_headers(useragent="RCurl"))
+  doc <- xmlInternalTreeParse(content(req, as="text"))
   
   doc
 }
@@ -149,7 +162,10 @@ pdfetch_EUROSTAT_GETDSD <- function(flowRef) {
 #' @param flowRef Eurostat dataset code
 #' @export
 #' @examples
-#' pdfetch_EUROSTAT_DSD("namq_gdp_c")
+#' tryCatch(pdfetch_EUROSTAT_DSD("namq_gdp_c"),
+#'          error = function(e) {},
+#'          warning = function(w) {}
+#' )
 pdfetch_EUROSTAT_DSD <- function(flowRef) {
   doc <- pdfetch_EUROSTAT_GETDSD(flowRef)
   concepts <- setdiff(unlist(getNodeSet(doc, "//str:Dimension/@id")), c("OBS_VALUE","OBS_STATUS","OBS_FLAG"))
@@ -182,8 +198,11 @@ pdfetch_EUROSTAT_DSD <- function(flowRef) {
 #' @return a xts object
 #' @export
 #' @examples
-#' pdfetch_EUROSTAT("namq_gdp_c", FREQ="Q", S_ADJ="SWDA", UNIT="MIO_EUR", INDIC_NA="B1GM",
-#'  GEO=c("DE","UK"))
+#' tryCatch(pdfetch_EUROSTAT("namq_gdp_c", FREQ="Q", S_ADJ="SWDA", UNIT="MIO_EUR", 
+#'                           INDIC_NA="B1GM", GEO=c("DE","UK")),
+#'          error = function(e) {},
+#'          warning = function(w) {}
+#' )
 pdfetch_EUROSTAT <- function(flowRef, from, to, ...) {
   arguments <- list(...)
   doc <- pdfetch_EUROSTAT_GETDSD(flowRef)
@@ -211,7 +230,8 @@ pdfetch_EUROSTAT <- function(flowRef, from, to, ...) {
   else
     url <- paste0("http://ec.europa.eu/eurostat/SDMX/diss-web/rest/data/",flowRef,"/",key)
   
-  doc <- xmlInternalTreeParse(getURL(url, useragent="RCurl"))
+  req <- GET(url, add_headers(useragent="RCurl"))
+  doc <- xmlInternalTreeParse(content(req, as="text"))
   
   results <- list()
   seriesSet <- getNodeSet(doc, "//generic:Series")
@@ -271,13 +291,17 @@ pdfetch_EUROSTAT <- function(flowRef, from, to, ...) {
 #' @return a xts object
 #' @export
 #' @examples
-#' pdfetch_WB("NY.GDP.MKTP.CD", c("BR","MX"))
+#' tryCatch(pdfetch_WB("NY.GDP.MKTP.CD", c("BR","MX")),
+#'          error = function(e) {},
+#'          warning = function(w) {}
+#' )
 pdfetch_WB <- function(indicators, countries="all") {
   countries <- paste(countries, collapse=";")
   indicators <- paste(indicators, collapse=";")
   
   query <- paste0("http://api.worldbank.org/countries/",countries,"/indicators/",indicators,"?format=json&per_page=1000")
-  x <- fromJSON(getURL(query))[[2]]
+  req <- GET(query)
+  x <- fromJSON(content(req, as="text"))[[2]]
   
   if (!inherits(x, "data.frame")) {
     warning("No series found")
@@ -300,7 +324,10 @@ pdfetch_WB <- function(indicators, countries="all") {
 #' @return a xts object
 #' @export
 #' @examples
-#' pdfetch_BOE(c("LPMVWYR", "LPMVWYR"), "2012-01-01")
+#' tryCatch(pdfetch_BOE(c("LPMVWYR", "LPMVWYR"), "2012-01-01"),
+#'          error = function(e) {},
+#'          warning = function(w) {}
+#' )
 pdfetch_BOE <- function(identifiers, from, to=Sys.Date()) {
   if (length(identifiers) > 300)
     stop("At most 300 series can be downloaded at once")
@@ -332,7 +359,10 @@ pdfetch_BOE <- function(identifiers, from, to=Sys.Date()) {
 #' @return a xts object
 #' @export
 #' @examples
-#' pdfetch_BLS(c("EIUIR","EIUIR100"), 2005, 2010)
+#' tryCatch(pdfetch_BLS(c("EIUIR","EIUIR100"), 2005, 2010),
+#'          error = function(e) {},
+#'          warning = function(w) {}
+#' )
 pdfetch_BLS <- function(identifiers, from, to) {
   if (!is.numeric(from) || !is.numeric(to))
     stop("Both from and to must be integers")
@@ -354,16 +384,14 @@ pdfetch_BLS <- function(identifiers, from, to) {
     if (i == 2)
       from <- years[i-1]
     
-    req <- toJSON(list(seriesid=identifiers, startyear=unbox(from), endyear=unbox(to)))
-    headers <- list('Content-Type' = 'application/json; charset=utf-8')
-    resp <- fromJSON(postForm("http://api.bls.gov/publicAPI/v1/timeseries/data/",
-                              .opts=list(postfields=req, httpheader=headers)))
+    req <- list(seriesid=identifiers, startyear=unbox(from), endyear=unbox(to))
+    resp <- POST("http://api.bls.gov/publicAPI/v1/timeseries/data/", body=req, encode="json")
+    resp <- fromJSON(content(resp, as="text"))
     
     if (resp$status != "REQUEST_SUCCEEDED")
       stop("Request failed")
     
     series <- resp$Results$series
-    print(series$seriesID)
     for (j in 1:length(identifiers)) {
       seriesID <- series$seriesID[j]
       if (length(series$data[[j]]) > 0)
@@ -412,14 +440,18 @@ pdfetch_BLS <- function(identifiers, from, to) {
 #' @return a xts object
 #' @export
 #' @examples
-#' x <- pdfetch_INSEE(c("000810635"))
+#' tryCatch(pdfetch_INSEE(c("000810635")),
+#'    error = function(e) {},
+#'    warning = function(w) {}
+#' )
 pdfetch_INSEE <- function(identifiers) {
   results <- list()
   
   for (id in identifiers) {
     url <- paste0("http://www.bdm.insee.fr/bdm2/affichageSeries.action?idbank=",id)
     page <- tryCatch({
-      getURL(url, httpheader = c("Accept-Language"="en-US,en;q=0.8"))
+      req <- GET(url, add_headers("Accept-Language"="en-US,en;q=0.8"))
+      content(req, as="text")
     }, warning = function(w) {
       
     })
@@ -460,13 +492,16 @@ pdfetch_INSEE <- function(identifiers) {
   na.trim(do.call(merge.xts, results), is.na="all")
 }
 
-#' Fetch data from theb UK Office of National Statistics
+#' Fetch data from the UK Office of National Statistics
 #' @param identifiers a vector of ONS series codes
 #' @param dataset ONS dataset name
 #' @return a xts object
 #' @export
 #' @examples
-#' pdfetch_ONS(c("LF24","LF2G"), "lms")
+#' tryCatch(pdfetch_ONS(c("LF24","LF2G"), "lms"),
+#'          error = function(e) {},
+#'          warning = function(w) {}
+#' )
 pdfetch_ONS <- function(identifiers, dataset) {
   identifiers <- toupper(identifiers)
   dataset <- tolower(dataset)
@@ -525,6 +560,61 @@ pdfetch_ONS <- function(identifiers, dataset) {
     }
   }
 
+  if (length(results) == 0)
+    return(NULL)
+  
+  na.trim(do.call(merge.xts, results), is.na="all")
+}
+
+#' Fetch data from the US Energy Information Administration
+#' @param identifiers a vector of EIA series codes
+#' @param api_key EIA API key
+#' @return a xts object
+#' @export
+#' @examples
+#' tryCatch(pdfetch_EIA(c("ELEC.GEN.ALL-AK-99.A","ELEC.GEN.ALL-AK-99.Q"), EIA_KEY),
+#'          error = function(e) {},
+#'          warning = function(w) {}
+#' )
+pdfetch_EIA <- function(identifiers, api_key) {
+  results <- list()
+  
+  for (i in 1:length(identifiers)) {
+    id <- identifiers[i]
+    url <- paste0("http://api.eia.gov/series/?series_id=",id,"&api_key=",api_key)
+    req <- GET(url)
+    res <- fromJSON(content(req, as="text"))
+    
+    if (is.null(res$request)) {
+      warning(paste("Invalid series code",id))
+      next
+    }
+    
+    freq <- res$series$f
+    dates <- unlist(lapply(res$series$data[[1]], function(x) x[1]))
+    data <- as.numeric(unlist(lapply(res$series$data[[1]], function(x) x[2])))
+    
+    if (freq == "A") {
+      dates <- as.Date(ISOdate(as.numeric(dates), 12, 31))
+    } else if (freq == "Q") {
+      y <- as.numeric(substr(dates, 1, 4))
+      m <- 3*as.numeric(substr(dates, 6, 6))
+      dates <- month_end(as.Date(ISOdate(y,m,1)))
+    } else if (freq == "M") {
+      y <- as.numeric(substr(dates, 1, 4))
+      m <- as.numeric(substr(dates, 5, 6))
+      dates <- month_end(as.Date(ISOdate(y,m,1)))
+    } else if (freq == "W" || freq == "D") {
+      dates <- as.Date(dates, "%Y%m%d")
+    } else {
+      warning(paste("Unrecognized frequency",freq,"for series",id))
+    }
+    
+    x <- xts(rev(data), rev(dates))
+    colnames(x) <- id
+    results[[i]] <- x
+  }
+  
   if (length(results) == 0)
     return(NULL)
   

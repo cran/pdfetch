@@ -9,4 +9,5 @@ Supported sources
 * UK - Bank of England
 * UK - ONS
 * US - Bureau of Labor Statistics
+* US - Energy Information Administration
 * US - FRED (St Louis Fed)

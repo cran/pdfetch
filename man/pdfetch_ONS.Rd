@@ -1,6 +1,6 @@
 \name{pdfetch_ONS}
 \alias{pdfetch_ONS}
-\title{Fetch data from theb UK Office of National Statistics}
+\title{Fetch data from the UK Office of National Statistics}
 \usage{
 pdfetch_ONS(identifiers, dataset)
 }
@@ -13,9 +13,12 @@ pdfetch_ONS(identifiers, dataset)
 a xts object
 }
 \description{
-Fetch data from theb UK Office of National Statistics
+Fetch data from the UK Office of National Statistics
 }
 \examples{
-pdfetch_ONS(c("LF24","LF2G"), "lms")
+tryCatch(pdfetch_ONS(c("LF24","LF2G"), "lms"),
+         error = function(e) {},
+         warning = function(w) {}
+)
 }
 
