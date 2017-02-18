@@ -1,15 +1,20 @@
 Package: pdfetch
-Imports: httr, zoo, xts, XML, lubridate, jsonlite, reshape2
+Imports: httr, zoo, xts, XML, lubridate, jsonlite, reshape2, xml2,
+        stringr, readr
 Type: Package
 Title: Fetch Economic and Financial Time Series Data from Public
         Sources
-Version: 0.1.7
-Date: 2015-07-15
+Version: 0.1.8
+Date: 2017-02-17
 Author: Abiel Reinhart <abielr@gmail.com>
 Maintainer: Abiel Reinhart <abielr@gmail.com>
-Description: Download economic and financial time series from public sources.
+Description: Download economic and financial time series from public sources, 
+  including the St Louis Fed's FRED system, Yahoo Finance, the US Bureau of Labor Statistics, 
+  the US Energy Information Administration, the World Bank, Eurostat, the European Central Bank,
+  the Bank of England, the UK's Office of National Statistics, and INSEE.
 License: GPL
+RoxygenNote: 5.0.1
 NeedsCompilation: no
-Packaged: 2015-07-18 20:05:37 UTC; abielr
+Packaged: 2017-02-18 03:42:15 UTC; abielr
 Repository: CRAN
-Date/Publication: 2015-07-19 00:34:03
+Date/Publication: 2017-02-18 09:40:57
