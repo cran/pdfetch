@@ -4,8 +4,8 @@ Imports: httr, zoo, xts, XML, lubridate, jsonlite, reshape2, xml2,
 Type: Package
 Title: Fetch Economic and Financial Time Series Data from Public
         Sources
-Version: 0.1.8
-Date: 2017-02-17
+Version: 0.1.9
+Date: 2017-04-14
 Author: Abiel Reinhart <abielr@gmail.com>
 Maintainer: Abiel Reinhart <abielr@gmail.com>
 Description: Download economic and financial time series from public sources, 
@@ -15,6 +15,6 @@ Description: Download economic and financial time series from public sources,
 License: GPL
 RoxygenNote: 5.0.1
 NeedsCompilation: no
-Packaged: 2017-02-18 03:42:15 UTC; abielr
+Packaged: 2017-04-15 02:52:28 UTC; abielr
 Repository: CRAN
-Date/Publication: 2017-02-18 09:40:57
+Date/Publication: 2017-04-15 05:13:58 UTC
