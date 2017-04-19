@@ -30,6 +30,7 @@ pdfetch_YAHOO <- function(identifiers,
     stop(paste0("Invalid fields, must be one of ", valid.fields))
   
   results <- list()
+  col_types <- paste0("D", paste(rep("d", length(valid.fields)), collapse=""))
   for (i in 1:length(identifiers)) {
     url <- paste0("http://chart.yahoo.com/table.csv?s=",identifiers[i],
                          "&c=", year(from),
@@ -39,7 +40,7 @@ pdfetch_YAHOO <- function(identifiers,
                          "&d=", month(to)-1,
                          "&e=", day(to))
     req <- GET(url)
-    fr <- content(req, encoding="utf-8", col_types=readr::cols())
+    fr <- content(req, encoding="utf-8", as="parsed", col_types=col_types)
     x <- xts(fr[,match(fields, valid.fields)+1], as.Date(fr[[1]]))
     dim(x) <- c(nrow(x),ncol(x))
     if (length(fields)==1)
@@ -148,7 +149,7 @@ pdfetch_ECB <- function(identifiers) {
 pdfetch_EUROSTAT_GETDSD <- function(flowRef) {
   url <- paste0("http://ec.europa.eu/eurostat/SDMX/diss-web/rest/datastructure/ESTAT/DSD_", flowRef)
   req <- GET(url, add_headers(useragent="RCurl"))
-  doc <- xmlInternalTreeParse(content(req, as="text"))
+  doc <- xmlInternalTreeParse(content(req, as="text", encoding="utf-8"))
   
   doc
 }
@@ -617,6 +618,55 @@ pdfetch_EIA <- function(identifiers, api_key) {
     
     x <- xts(rev(data), rev(dates))
     colnames(x) <- id
+    results[[i]] <- x
+  }
+  
+  if (length(results) == 0)
+    return(NULL)
+  
+  na.trim(do.call(merge.xts, results), is.na="all")
+}
+
+#' Fetch data from the Deutsche Bundesbank
+#' @param identifiers a vector of series codes
+#' @return a xts object
+#' @export
+#' @seealso \url{https://www.bundesbank.de/Navigation/EN/Statistics/Time_series_databases/time_series_databases.html}
+#' @examples
+#' \dontrun{
+#' pdfetch_BUNDESBANK(c("BBNZ1.Q.DE.Y.H.0000.A","BBK01.BJ9069"))
+#' }
+pdfetch_BUNDESBANK <- function(identifiers) {
+  results <- list()
+  for (i in 1:length(identifiers)) {
+    url <- paste0("https://www.bundesbank.de/cae/servlet/StatisticDownload?tsId=",identifiers[i],"&its_csvFormat=en&its_fileFormat=csv&mode=its")
+    req <- GET(url)
+    if (grepl("Die Zeitreihe.+oder nicht vorhanden", content(req, as="text", encoding="utf-8"))) {
+      warning(paste("Series", identifiers[i], "not found"))
+      next()
+    }
+    
+    fr <- content(req, encoding="utf-8", as="parsed", col_names=F, col_types=readr::cols())
+    fr <- fr[grep("^\\d{4}", fr[[1]]),1:2]
+    
+    dates <- fr[[1]]
+    if (regexpr("^\\d{4}$", dates[1], perl=T)==1) { # Annual
+      dates <- as.Date(ISOdate(as.numeric(dates),12,31))
+    } else if (regexpr("^\\d{4}-\\d{2}$", dates[1], perl=T)==1) { # Monthly and quarterly
+      y <- as.numeric(substr(dates, 1, 4))
+      m <- as.numeric(substr(dates, 6, 7))
+      if (length(m) > 1 && all(m%in%c(1,4,7,10)))
+        m <- m+2
+      dates <- as.Date(month_end(ISOdate(y,m,1)))
+    } else if (regexpr("^\\d{4}-\\d{2}-\\d{2}$", dates[1], perl=T)==1) { # Daily
+      dates <- as.Date(dates)
+    } else {
+      stop(paste0("Unrecognized date format for series: ", identifiers[i]))
+    }
+    value <- as.numeric(fr[[2]])
+    
+    x <- xts(value, dates)
+    colnames(x) <- identifiers[i]
     results[[i]] <- x
   }
   
