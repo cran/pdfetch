@@ -1,8 +1,8 @@
-9fbe2e88fa0a844e3ad56485b88ec1fb *DESCRIPTION
+f53a611a6d772312eb22931ba8cc28f8 *DESCRIPTION
 7175fc79ef0b4b8f56d9f212075e5172 *NAMESPACE
-e91f9b0fc96f83d8a845b32a398d040d *NEWS
+9c45df64b359ab8b30fd23eb0915e0f0 *NEWS
 374229d7627155f7ba1e194db9c6cb3e *R/help.R
-ec14740ff00990706b33697504067650 *R/pdfetch.R
+632a0c4c9fc72b076d2c97c8dcf95df3 *R/pdfetch.R
 3078c5e8933c3892964fe8e9164c477e *R/utils.R
 a3dd74c021bfe401ea9a86684f052e97 *README.md
 2675bc4c3574ea708e00457d1cf296e6 *inst/tests/test-pdfetch.R
@@ -12,10 +12,10 @@ c9fa62bde2eb0069810d5a75aeb4ccd8 *man/pdfetch_BLS.Rd
 4701bda368a265ca7cbf9561cba61b4f *man/pdfetch_BUNDESBANK.Rd
 34378d7e90954199bac255e65ac0c7c5 *man/pdfetch_ECB.Rd
 4f1be6ebd89e45a29f1a0ba754dc1e89 *man/pdfetch_EIA.Rd
-dc1e27b92800bbc9451836cabeff10bd *man/pdfetch_EUROSTAT.Rd
+7189f4f46f1568ae5e05adfd0d8f3553 *man/pdfetch_EUROSTAT.Rd
 c248a57de6076e4e50fbccd156c7a8a6 *man/pdfetch_EUROSTAT_DSD.Rd
 9d773153f92c4c5817507260b9dab82a *man/pdfetch_FRED.Rd
 1ca0626fd9fbb9e4d0881e7e8fd796d5 *man/pdfetch_INSEE.Rd
 3b4c752cbd99a4332cc41da62dc87b07 *man/pdfetch_ONS.Rd
 6c16c26b844e6fe7a6a366759a1ce0d1 *man/pdfetch_WB.Rd
-8ca95850afd075bbbd2ff07495cebd6e *man/pdfetch_YAHOO.Rd
+cfd98d2b9f2d71866b57d0f68b882c51 *man/pdfetch_YAHOO.Rd
