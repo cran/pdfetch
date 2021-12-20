@@ -168,10 +168,10 @@ pdfetch_ECB <- function(identifiers) {
   for (i in 1:length(identifiers)) {
     req <- GET(paste0("http://sdw.ecb.europa.eu/quickviewexport.do?SERIES_KEY=",identifiers[i],"&type=csv"))
     tmp <- content(req, as="text", encoding="utf-8")
-    fr <- utils::read.csv(textConnection(tmp), header=F, stringsAsFactors=F)[-c(1:5),]
-    
-    if (inherits(fr, "character"))
+    if (stringr::str_detect(tmp, "(serieskey no longer active)|(non-existent serieskey)")) {
       stop(paste0("Series ", identifiers[i], " not found"))
+    }
+    fr <- utils::read.csv(textConnection(tmp), header=F, stringsAsFactors=F, skip=6)
     
     freq <- strsplit(identifiers[i], "\\.")[[1]][2]
     
@@ -239,7 +239,7 @@ pdfetch_EUROSTAT_DSD <- function(flowRef) {
 #' Fetch data from Eurostat
 #' 
 #' Eurostat stores its statistics in data cubes, which can be browsed at
-#' \url{http://ec.europa.eu/eurostat/data/database}. To access data, specify the name of a data cube and optionally filter it based on its dimensions. 
+#' \url{https://ec.europa.eu/eurostat/data/database}. To access data, specify the name of a data cube and optionally filter it based on its dimensions. 
 #' 
 #' @param flowRef Eurostat dataset code
 #' @param from a Date object or string in YYYY-MM-DD format. If supplied, only data on or after this date will be returned
@@ -335,11 +335,11 @@ pdfetch_EUROSTAT <- function(flowRef, from, to, ...) {
 #' Fetch data from World Bank
 #' 
 #' @param indicators a vector of World Bank indicators
-#' @param countries a vector of countrie identifiers, which can be 2- or
+#' @param countries a vector of country identifiers, which can be 2- or
 #'   3-character ISO codes. The special option "all" retrieves all countries.
 #' @return a xts object
 #' @export
-#' @seealso \url{http://data.worldbank.org/}
+#' @seealso \url{https://data.worldbank.org/}
 #' @examples
 #' \dontrun{
 #' pdfetch_WB("NY.GDP.MKTP.CD", c("BR","MX"))
@@ -488,7 +488,7 @@ pdfetch_BLS <- function(identifiers, from, to) {
 #' @param identifiers a vector of INSEE series codes
 #' @return a xts object
 #' @export
-#' @seealso \url{https://www.insee.fr/}
+#' @seealso \url{https://www.insee.fr/en/accueil}
 #' @examples
 #' \dontrun{
 #' pdfetch_INSEE(c("000810635"))
@@ -598,9 +598,11 @@ pdfetch_ONS <- function(identifiers, dataset) {
 #' Fetch data from the US Energy Information Administration
 #' @param identifiers a vector of EIA series codes
 #' @param api_key EIA API key
-#' @return a xts object
+#' @return a xts object. Note that for hourly series the time zone will always be set to 
+#' GMT, whereas the true time zone may be different. If you wish to use the correct time zone 
+#' you must manually convert it. 
 #' @export
-#' @seealso \url{http://www.eia.gov/}
+#' @seealso \url{https://www.eia.gov/}
 #' @examples
 #' \dontrun{
 #' pdfetch_EIA(c("ELEC.GEN.ALL-AK-99.A","ELEC.GEN.ALL-AK-99.Q"), EIA_KEY)
@@ -639,7 +641,7 @@ pdfetch_EIA <- function(identifiers, api_key) {
     } else if (freq == "W" || freq == "D") {
       dates <- as.Date(dates, "%Y%m%d")
     } else if (freq == "H") {
-      dates <- as.POSIXct(dates, format="%Y%m%dT%HZ")
+      dates <- as.POSIXct(dates, format="%Y%m%dT%HZ", tz="GMT")
     } else {
       warning(paste("Unrecognized frequency",freq,"for series",id))
       next
@@ -663,7 +665,7 @@ pdfetch_EIA <- function(identifiers, api_key) {
 #' @param identifiers a vector of series codes
 #' @return a xts object
 #' @export
-#' @seealso \url{https://www.bundesbank.de/Navigation/EN/Statistics/Time_series_databases/time_series_databases.html}
+#' @seealso \url{https://www.bundesbank.de/en/statistics/time-series-databases}
 #' @examples
 #' \dontrun{
 #' pdfetch_BUNDESBANK(c("BBNZ1.Q.DE.Y.H.0000.A","BBK01.BJ9069"))
@@ -671,24 +673,26 @@ pdfetch_EIA <- function(identifiers, api_key) {
 pdfetch_BUNDESBANK <- function(identifiers) {
   results <- list()
   for (i in 1:length(identifiers)) {
-    url <- paste0("https://www.bundesbank.de/cae/servlet/StatisticDownload?tsId=",identifiers[i],"&its_csvFormat=en&its_fileFormat=csv&mode=its")
+    url <- paste0("https://api.statistiken.bundesbank.de/rest/download/",stringr::str_replace(identifiers[i], "\\.", "/"),"?format=csv&lang=en")
     req <- GET(url)
-    if (grepl("Die Zeitreihe.+oder nicht vorhanden", content(req, as="text", encoding="utf-8"))) {
+    if (req$status_code != 200) {
       warning(paste("Series", identifiers[i], "not found"))
       next()
     }
     
-    fr <- content(req, encoding="utf-8", as="parsed", col_names=F, col_types=readr::cols())
+    fr <- utils::read.csv(textConnection(rawToChar(content(req, as="raw"))))
     fr <- fr[grep("^\\d{4}", fr[[1]]),1:2]
     
     dates <- fr[[1]]
     if (regexpr("^\\d{4}$", dates[1], perl=T)==1) { # Annual
       dates <- as.Date(ISOdate(as.numeric(dates),12,31))
-    } else if (regexpr("^\\d{4}-\\d{2}$", dates[1], perl=T)==1) { # Monthly and quarterly
+    } else if (stringr::str_detect(dates[1], "^\\d{4}-Q\\d$")) { #Quarterly
+      y <- as.numeric(substr(dates, 1, 4))
+      m <- as.numeric(substr(dates, 7, 7))*3
+      dates <- as.Date(month_end(ISOdate(y,m,1)))
+    } else if (stringr::str_detect(dates[1], "^\\d{4}-\\d{2}$")) { # Monthly
       y <- as.numeric(substr(dates, 1, 4))
       m <- as.numeric(substr(dates, 6, 7))
-      if (length(m) > 1 && all(m%in%c(1,4,7,10)))
-        m <- m+2
       dates <- as.Date(month_end(ISOdate(y,m,1)))
     } else if (regexpr("^\\d{4}-\\d{2}-\\d{2}$", dates[1], perl=T)==1) { # Daily
       dates <- as.Date(dates)
