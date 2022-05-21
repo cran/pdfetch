@@ -4,8 +4,8 @@ Imports: httr, zoo, xts, XML, lubridate, jsonlite, reshape2, curl,
 Type: Package
 Title: Fetch Economic and Financial Time Series Data from Public
         Sources
-Version: 0.2.6
-Date: 2022-02-25
+Version: 0.2.7
+Date: 2022-05-21
 Author: Abiel Reinhart <abielr@gmail.com>
 Maintainer: Abiel Reinhart <abielr@gmail.com>
 Description: Download economic and financial time series from public sources, 
@@ -17,6 +17,6 @@ RoxygenNote: 7.1.2
 URL: https://github.com/abielr/pdfetch
 BugReports: https://github.com/abielr/pdfetch/issues
 NeedsCompilation: no
-Packaged: 2022-02-25 14:58:23 UTC; abielr
+Packaged: 2022-05-21 13:06:52 UTC; abielr
 Repository: CRAN
-Date/Publication: 2022-02-25 23:30:10 UTC
+Date/Publication: 2022-05-21 23:00:11 UTC

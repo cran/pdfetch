@@ -1,3 +1,7 @@
+Version 0.2.7
+--------------------------------------
+* Fix to pdfetch_YAHOO, which was failing to retrieve data (thanks to Freddy Villabona)
+
 Version 0.2.6
 --------------------------------------
 * Update to pdfetch_EIA() to support HTTPS
