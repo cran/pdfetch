@@ -1,3 +1,11 @@
+Version 0.3.1
+--------------------------------------
+* Updated pdfetch_WB function to use the World Bank v2 API
+
+Version 0.3.0
+--------------------------------------
+* Fixed pdfetch_FRED function, which was failing to retrieve data
+
 Version 0.2.9
 --------------------------------------
 * Fixed Yahoo functions, which had stopped returning data, by borrowing new code from the quantmod package, thank you to Joshua Ulrich

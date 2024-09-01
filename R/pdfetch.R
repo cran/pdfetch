@@ -133,27 +133,25 @@ pdfetch_YAHOO <- function(identifiers,
 pdfetch_FRED <- function(identifiers) {  
   results <- list()
   for (i in 1:length(identifiers)) {
-    
-    url <- paste0("https://research.stlouisfed.org/fred2/series/",identifiers[i],"/downloaddata/",identifiers[i],".txt")
+
+    url <- paste0("https://fred.stlouisfed.org/graph/api/series/?id=",identifiers[i])
     req <- GET(url)
-    fileLines <- readLines(textConnection(content(req, encoding="utf-8")))
-    freq <- sub(",", "", strsplit(fileLines[6], " +")[[1]][2])
-    skip <- grep("DATE", fileLines)[1]
-    fr <- utils::read.fwf(textConnection(content(req, encoding="utf-8")), skip=skip, widths=c(10,20), na.strings=".", colClasses=c("character","numeric"))
-    
-    dates <- as.Date(fr[,1], origin="1970-01-01")
+    freq <- content(req)$chart_series[[1]]$frequency
+
+    url <- paste0("https://fred.stlouisfed.org/graph/fredgraph.csv?id=",identifiers[i])
+    req <- GET(url)
+    df <- content(req, col_types=readr::cols())
 
     if (freq == "Annual")
-      dates <- year_end(dates)
+      df$DATE <- year_end(df$DATE)
     else if (freq == "Semiannual")
-      dates <- halfyear_end(dates)
+      df$DATE <- halfyear_end(df$DATE)
     else if (freq == "Quarterly")
-      dates <- quarter_end(dates)
+      df$DATE <- quarter_end(df$DATE)
     else if (freq == "Monthly")
-      dates <- month_end(dates)
+      df$DATE <- month_end(df$DATE)
     
-    ix <- !is.na(dates)
-    x <- xts(as.matrix(fr[ix,2]), dates[ix])
+    x <- xts(as.matrix(suppressWarnings(as.numeric(pull(df, 2)))), df$DATE)
     dim(x) <- c(nrow(x),1)
     colnames(x) <- identifiers[i]
     results[[identifiers[i]]] <- x
@@ -333,9 +331,8 @@ pdfetch_WB <- function(indicators, countries="all") {
   countries <- paste(countries, collapse=";")
   indicators <- paste(indicators, collapse=";")
   
-  query <- paste0("http://api.worldbank.org/countries/",countries,"/indicators/",indicators,"?format=json&per_page=1000")
-  req <- GET(query)
-  x <- fromJSON(content(req, as="text"))[[2]]
+  query <- paste0("https://api.worldbank.org/v2/country/",countries,"/indicator/",indicators,"?format=json&per_page=1000")
+  x <- fromJSON(query)[[2]]
   
   if (!inherits(x, "data.frame")) {
     warning("No series found")
@@ -392,7 +389,7 @@ pdfetch_BOE <- function(identifiers, from, to=Sys.Date()) {
 #'   that is beyond the last available data point in the series.
 #' @return a xts object
 #' @export
-#' @seealso \url{https://www.bls.gov/data/}
+#' @seealso \url{https://www.bls.gov/data/tools.htm}
 #' @examples
 #' \dontrun{
 #' pdfetch_BLS(c("EIUIR","EIUIR100"), 2005, 2010)
