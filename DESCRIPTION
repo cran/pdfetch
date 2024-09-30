@@ -1,11 +1,11 @@
 Package: pdfetch
-Imports: httr, zoo, xts, XML, lubridate, jsonlite, curl, xml2, stringr,
-        magrittr, dplyr, tidyr, readr
+Imports: httr, zoo, xts, XML, lubridate, jsonlite, xml2, stringr,
+        magrittr, dplyr, tidyr, readr, quantmod
 Type: Package
 Title: Fetch Economic and Financial Time Series Data from Public
         Sources
-Version: 0.3.1
-Date: 2024-08-31
+Version: 0.3.2
+Date: 2024-09-30
 Authors@R: person(given = "Abiel",
                   family = "Reinhart",
                   role = c("aut", "cre"),
@@ -19,8 +19,8 @@ RoxygenNote: 7.2.3
 URL: https://github.com/abielr/pdfetch
 BugReports: https://github.com/abielr/pdfetch/issues
 NeedsCompilation: no
-Packaged: 2024-08-31 23:28:25 UTC; abielr
+Packaged: 2024-09-30 01:22:18 UTC; abielr
 Author: Abiel Reinhart [aut, cre]
 Maintainer: Abiel Reinhart <abielr@gmail.com>
 Repository: CRAN
-Date/Publication: 2024-09-01 05:50:02 UTC
+Date/Publication: 2024-09-30 02:40:02 UTC
